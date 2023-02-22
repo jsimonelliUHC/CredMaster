@@ -310,15 +310,31 @@ class FireProx(object):
     def delete_api(self, api_id):
         if not api_id:
             self.error('Please provide a valid API ID')
-        items = self.list_api(api_id, deleting = True)
-        for item in items:
-            item_api_id = item['id']
-            if item_api_id == api_id:
-                response = self.client.delete_rest_api(
-                    restApiId=api_id
-                )
-                return True
-        return False
+        try:
+            response = self.client.delete_rest_api(
+                restApiId=api_id
+            )
+        except self.client.exceptions.ClientError as err:
+            response = err.response
+            error_code = response.get("Error", {}).get("Code")
+            print(f"Failed to delete because of: {error_code}")
+            if (response and response.get("Error", {}).get("Code") == "TooManyRequestsException"):
+                print("Continue for TooManyRequestsException exception.")
+                print("But first we sleep")
+                time.sleep(5)
+                self.delete_api(api_id)
+        print(f"API {api_id} was deleted.")
+        return True
+        
+        # items = self.list_api(api_id, deleting = True)
+        # for item in items:
+        #     item_api_id = item['id']
+        #     if item_api_id == api_id:
+        #         response = self.client.delete_rest_api(
+        #             restApiId=api_id
+        #         )
+        #         return True
+        # return False
 
     def list_api(self, deleted_api_id=None, deleting = False):
         response = self.client.get_rest_apis()

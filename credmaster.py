@@ -445,6 +445,7 @@ class CredMaster(object):
 
 		self.log_entry("Clearing APIs for all regions")
 		clear_count = 0
+		new_count = 0
 
 		for region in self.regions:
 
@@ -452,6 +453,7 @@ class CredMaster(object):
 			fp = FireProx(args, help_str)
 			active_apis = fp.list_api()
 			count = len(active_apis)
+			new_count += count
 			err = "skipping"
 			if count != 0:
 				err = "removing"
@@ -459,8 +461,13 @@ class CredMaster(object):
 
 			for api in active_apis:
 				if "fireprox" in api["name"]:
+					api_remove = api["id"]
+					self.log_entry(f"Attempting to remove API: {api_remove}")
 					fp.delete_api(api["id"])
+					self.log_entry("Sleeping before next API")
+					time.sleep(5)
 					clear_count += 1
+					self.log_entry(f"{clear_count} APIs out of {new_count} have been removed")
 
 		self.log_entry(f"APIs removed: {clear_count}")
 
